@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "railgun_relayer.fullname" . }}-nwaku
+  name: {{ include "railgun-relayer.fullname" . }}-nwaku
   labels:
-{{ include "railgun_relayer.labels" . | indent 4 }}
+{{ include "railgun-relayer.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "railgun_relayer.name" . }}-nwaku
+      app.kubernetes.io/name: {{ include "railgun-relayer.name" . }}-nwaku
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "railgun_relayer.name" . }}-nwaku
+        app.kubernetes.io/name: {{ include "railgun-relayer.name" . }}-nwaku
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
     {{- with .Values.nwaku.imagePullSecrets }}
@@ -24,32 +24,55 @@ spec:
         options:
           - name: ndots
             value: "1"
-      serviceAccountName: {{ template "railgun_relayer.serviceAccountName" . }}
+      serviceAccountName: {{ template "railgun-relayer.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: nwaku
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.nwaku.image.repository }}:{{ tpl .Values.nwaku.image.tag . }}"
           imagePullPolicy: {{ .Values.nwaku.image.pullPolicy }}
-          envFrom:
-            - secretRef:
-                name: {{ include "railgun_relayer.fullname" . }}
+          command: ["wakunode2"]
+          args: [
+          "--config-file=/app/config.toml",
+          "--nat=extip:{{ .Values.nwaku.extip }}",
+          "--listen-address={{ .Values.nwaku.listen_address }}",
+          "--dns4-domain-name={{ .Values.nwaku.subdomain }}.{{ .Values.nwaku.basedomain }}",
+          "--nodekey={{ .Values.nwaku.nodekey }}",
+          "--websocket-support=true",
+          "--websocket-secure-key-path=/etc/tls-certs/tls.key",
+          "--websocket-secure-cert-path=/etc/tls-certs/tls.crt"
+          ]
+
           ports:
-          - name: wakuA
+          - name: waku-a
             containerPort: 60000
             hostPort: 60000
             protocol: TCP
-          - name: wakaB
+          - name: waka-b
             containerPort: 8000
             hostPort: 8000
             protocol: TCP
-          - name: wakuC
+          - name: waku-c
             containerPort: 8546
             protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: "railgun-config"
+            mountPath: "/app/config.toml"
+            subPath: "config.toml"
+          - name: "tls"
+            mountPath: "/etc/tls-certs"
+            readOnly: true
+      volumes:
+        - name: "railgun-config"
+          configMap:
+            name: "railgun-config"
+        - name: "tls"
+          secret:
+            secretName: tls-railgun-relayer
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

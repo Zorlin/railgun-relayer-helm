@@ -16,11 +16,18 @@ relayer:
 
 nwaku:
   image:
-    repository: statusteam/nim-waku:deploy-status-test
+    repository: statusteam/nim-waku
     #tag: "{{ .Chart.AppVersion }}"
-    tag: latest
+    tag: deploy-status-test
     #pullPolicy: IfNotPresent
     pullPolicy: Always
+  # Node details
+  # You'll need to uncomment and fill these out.
+  #extip:
+  #listen_address: 0.0.0.0
+  #subdomain:
+  #basedomain:
+  #nodekey:
 
 imagePullSecrets:
 - name: harbor-windowpain
@@ -50,20 +57,6 @@ securityContext:
 service:
   type: ClusterIP
   port: 80
-
-ingress:
-  enabled: false
-  className: null
-  annotations:
-    {}
-    # kubernetes.io/ingress.class: nginx
-  hosts:
-    - host: relayer04.windowpa.in
-      paths: "/"
-  tls:
-    - secretName: tls-relayer-ingress
-      hosts:
-        - relayer04.windowpa.in
 
 resources:
   {}

@@ -6,7 +6,7 @@ icon: https://pbs.twimg.com/profile_images/1403175227891273729/WG4QbS1v_400x400.
 maintainers:
   - email: zorlin@gmail.com
     name: zorlin@gmail.com
-name: railgun_relayer
+name: railgun-relayer
 sources:
   - http://github.com/Railgun-Community/relayer
 version: 0.1.0
