@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "railgun_relayer.fullname" . }}-nwaku
+  labels:
+{{ include "railgun_relayer.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "railgun_relayer.name" . }}-nwaku
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "railgun_relayer.name" . }}-nwaku
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+    {{- with .Values.nwaku.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      serviceAccountName: {{ template "railgun_relayer.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.nwaku.image.repository }}:{{ tpl .Values.nwaku.image.tag . }}"
+          imagePullPolicy: {{ .Values.nwaku.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "railgun_relayer.fullname" . }}
+          ports:
+          - name: wakuA
+            containerPort: 60000
+            hostPort: 60000
+            protocol: TCP
+          - name: wakaB
+            containerPort: 8000
+            hostPort: 8000
+            protocol: TCP
+          - name: wakuC
+            containerPort: 8546
+            protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+

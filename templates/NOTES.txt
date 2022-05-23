@@ -1,0 +1,5 @@
+Welcome to the Railgun Relayer.
+
+You should now have a HostPort service running on a node.
+
+Make sure ports are forwarded to it.
